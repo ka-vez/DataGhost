@@ -86,12 +86,12 @@ export function FileUploadModal({ isOpen, onClose, onSave }: FileUploadModalProp
     try {
       // Upload files to Supabase storage
       for (const uploadedFile of files) {
-        if (!userProfile?.username) {
-          throw new Error('User profile not found')
+        if (!userProfile?.id) {
+          throw new Error('User not authenticated')
         }
 
-        // Create file path: username/filename
-        const filePath = `${userProfile.username}/${uploadedFile.name}`
+        // Create file path: user_id/filename
+        const filePath = `${userProfile.id}/${uploadedFile.name}`
         
         // Upload file to Supabase storage
         const { data: uploadData, error: uploadError } = await supabase.storage
