@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Shield, Clock, Users, Lock, ArrowRight, CheckCircle, Heart, FileText, Smartphone, Globe } from 'lucide-react'
+import { Shield, Clock, Users, Lock, ArrowRight, CheckCircle, Heart, FileText, Smartphone, Globe, Key } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export function Homepage() {
@@ -11,16 +11,23 @@ export function Homepage() {
       image: "https://images.pexels.com/photos/5380664/pexels-photo-5380664.jpeg?auto=compress&cs=tinysrgb&w=600"
     },
     {
-      icon: <Clock className="w-8 h-8" />,
-      title: "Dead Man's Switch",
-      description: "Automated monitoring system that triggers your digital will when you stop checking in.",
-      image: "https://images.pexels.com/photos/1181298/pexels-photo-1181298.jpeg?auto=compress&cs=tinysrgb&w=600"
-    },
-    {
       icon: <Users className="w-8 h-8" />,
       title: "Asset Transfer",
       description: "Seamlessly transfer digital assets to trusted recipients according to your wishes.",
       image: "https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=600"
+    },
+    {
+      icon: <Clock className="w-8 h-8" />,
+      title: "Dead Man's Switch",
+      description: "Automated monitoring system that triggers your digital will when you stop checking in.",
+      image: "https://images.pexels.com/photos/5380642/pexels-photo-5380642.jpeg?auto=compress&cs=tinysrgb&w=600"
+    },
+    
+    {
+      icon: <Key className="w-8 h-8" />,
+      title: "Blockchain Secure",
+      description: "Military-grade encryption and blockchain technology ensure your digital legacy remains secure and tamper-proof.",
+      image: "https://images.pexels.com/photos/844124/pexels-photo-844124.jpeg?auto=compress&cs=tinysrgb&w=600"
     }
     
   ]
@@ -208,7 +215,7 @@ export function Homepage() {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
