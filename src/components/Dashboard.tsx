@@ -1,18 +1,23 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { Clock, AlertTriangle, CheckCircle2, BarChart3, Users, Shield, Calendar, TrendingUp, Archive, Plus, Activity, Trash2 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Clock, AlertTriangle, CheckCircle2, BarChart3, Users, Shield, Calendar, TrendingUp, Archive, Plus, Activity, Trash2, Upload, X } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useDigitalAssets } from '../hooks/useDigitalAssets'
 import { useCheckins } from '../hooks/useCheckins'
 import { Header } from './Header'
 import { Sidebar } from './Sidebar'
 import { ExecutionSummary } from './ExecutionSummary'
+import { AssetModal } from './AssetModal'
+import { FileUploadModal } from './FileUploadModal'
 
 export function Dashboard() {
   const { userProfile } = useAuth()
-  const { assets, loading: assetsLoading } = useDigitalAssets()
+  const { assets, loading: assetsLoading, addAsset } = useDigitalAssets()
   const { checkin, performCheckin, getStatus, getTimeUntilTrigger, getNextCheckinDate } = useCheckins()
   const [showExecution, setShowExecution] = useState(false)
+  const [showAssetModal, setShowAssetModal] = useState(false)
+  const [showFileUpload, setShowFileUpload] = useState(false)
+  const [showAllActivities, setShowAllActivities] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [recentActivities, setRecentActivities] = useState<Array<{
@@ -36,6 +41,15 @@ export function Dashboard() {
       await performCheckin()
     } catch (error) {
       console.error('Checkin failed:', error)
+    }
+  }
+
+  const handleAssetSave = async (data: any) => {
+    try {
+      await addAsset(data)
+      setShowAssetModal(false)
+    } catch (error) {
+      console.error('Failed to save asset:', error)
     }
   }
 
@@ -112,6 +126,44 @@ export function Dashboard() {
         type: 'asset_added',
         title: `${asset.platform_name} added`,
         description: `${asset.action}`,
+        timeAgo: getTimeAgo(new Date(asset.created_at)),
+        timestamp: new Date(asset.created_at)
+      })
+    })
+
+    // Sort by timestamp (most recent first)
+    return activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+  }
+
+  const getAllActivities = () => {
+    const activities: Array<{
+      id: string
+      type: 'checkin' | 'asset_added' | 'asset_updated' | 'asset_deleted'
+      title: string
+      description: string
+      timeAgo: string
+      timestamp: Date
+    }> = []
+
+    // Add check-in activity
+    if (checkin) {
+      activities.push({
+        id: `checkin-${checkin.id}`,
+        type: 'checkin',
+        title: 'System Check-in',
+        description: 'Dead man\'s switch timer reset',
+        timeAgo: getTimeAgo(new Date(checkin.last_checkin_at)),
+        timestamp: new Date(checkin.last_checkin_at)
+      })
+    }
+
+    // Add ALL asset activities
+    assets.forEach((asset) => {
+      activities.push({
+        id: `asset-${asset.id}`,
+        type: 'asset_added',
+        title: `${asset.platform_name} added`,
+        description: `${asset.action} - Created on ${new Date(asset.created_at).toLocaleDateString()}`,
         timeAgo: getTimeAgo(new Date(asset.created_at)),
         timestamp: new Date(asset.created_at)
       })
@@ -359,6 +411,7 @@ export function Dashboard() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowAssetModal(true)}
                   className="w-full flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-colors"
                 >
                   <div className="p-2 rounded-lg bg-purple-100 flex-shrink-0">
@@ -373,14 +426,15 @@ export function Dashboard() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowFileUpload(true)}
                   className="w-full flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-colors"
                 >
-                  <div className="p-2 rounded-lg bg-yellow-100 flex-shrink-0">
-                    <Archive className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600" />
+                  <div className="p-2 rounded-lg bg-purple-100 flex-shrink-0">
+                    <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
                   </div>
                   <div className="text-left min-w-0">
-                    <p className="font-medium text-gray-900 text-sm sm:text-base">Archive Settings</p>
-                    <p className="text-xs sm:text-sm text-gray-500">Configure legacy options</p>
+                    <p className="font-medium text-gray-900 text-sm sm:text-base">Upload Files</p>
+                    <p className="text-xs sm:text-sm text-gray-500">Upload digital assets</p>
                   </div>
                 </motion.button>
               </div>
@@ -394,7 +448,10 @@ export function Dashboard() {
             >
               <div className="flex items-center justify-between p-4 sm:p-6 pb-3 sm:pb-4 border-b border-gray-100">
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Recent Activity</h2>
-                <button className="text-xs sm:text-sm text-blue-600 hover:text-blue-700 font-medium">
+                <button 
+                  onClick={() => setShowAllActivities(true)}
+                  className="text-xs sm:text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                >
                   View All
                 </button>
               </div>
@@ -514,6 +571,97 @@ export function Dashboard() {
           </div>
         </main>
       </div>
+
+      {/* Modals */}
+      <AssetModal
+        isOpen={showAssetModal}
+        onClose={() => setShowAssetModal(false)}
+        onSave={handleAssetSave}
+      />
+
+      <FileUploadModal
+        isOpen={showFileUpload}
+        onClose={() => setShowFileUpload(false)}
+        onSave={addAsset}
+      />
+
+      {/* All Activities Modal */}
+      <AnimatePresence>
+        {showAllActivities && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={() => setShowAllActivities(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-900">All Activities</h2>
+                <button
+                  onClick={() => setShowAllActivities(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="space-y-4">
+                  {getAllActivities().map((activity, index) => (
+                    <motion.div
+                      key={activity.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <div className={`p-2 rounded-lg flex-shrink-0 ${
+                        activity.type === 'checkin' 
+                          ? 'bg-green-100 text-green-600' 
+                          : 'bg-blue-100 text-blue-600'
+                      }`}>
+                        {activity.type === 'checkin' ? (
+                          <CheckCircle2 className="w-5 h-5" />
+                        ) : (
+                          <Plus className="w-5 h-5" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="font-medium text-gray-900 text-sm">{activity.title}</h3>
+                          <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
+                            {activity.timeAgo}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600">{activity.description}</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {activity.timestamp.toLocaleString()}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                  
+                  {getAllActivities().length === 0 && (
+                    <div className="text-center py-12">
+                      <Activity className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500">No activities found</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

@@ -91,7 +91,15 @@ export function Sidebar({ isOpen = false, onClose, isCollapsed = false, onToggle
           >
             {/* Mobile Close Button */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Digital Assets</h2>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-6 h-6 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-lg font-semibold text-gray-900">Digital Assets</h2>
+                  <p className="text-sm text-gray-500">{assets.length} total assets</p>
+                </div>
+              </div>
               <button
                 onClick={onClose}
                 aria-label="Close sidebar"
@@ -102,9 +110,9 @@ export function Sidebar({ isOpen = false, onClose, isCollapsed = false, onToggle
             </div>
             
             {/* Mobile Sidebar Content */}
-            <div className="p-4">
+            <div className="p-6">
               {/* Action Buttons */}
-              <div className="space-y-2 mb-4">
+              <div className="space-y-2">
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -112,7 +120,7 @@ export function Sidebar({ isOpen = false, onClose, isCollapsed = false, onToggle
                     setShowAssetModal(true)
                     onClose?.()
                   }}
-                  className="w-full flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
+                  className="w-full flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   Add Asset
@@ -125,7 +133,7 @@ export function Sidebar({ isOpen = false, onClose, isCollapsed = false, onToggle
                     setShowFileUpload(true)
                     onClose?.()
                   }}
-                  className="w-full flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors text-sm"
+                  className="w-full flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
                 >
                   <Upload className="w-4 h-4" />
                   Upload Files
@@ -138,30 +146,39 @@ export function Sidebar({ isOpen = false, onClose, isCollapsed = false, onToggle
                     navigate('/asset-details')
                     onClose?.()
                   }}
-                  className="w-full flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors text-sm"
+                  className="w-full flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
                 >
                   <List className="w-4 h-4" />
                   Asset Details
                 </motion.button>
+                
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    handleDownloadWill()
+                    onClose?.()
+                  }}
+                  disabled={downloadingPDF || assets.length === 0}
+                  className="w-full flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Download className="w-4 h-4" />
+                  {downloadingPDF ? 'Generating...' : 'Download Will'}
+                </motion.button>
+                
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setShowUserProfile(true)
+                    onClose?.()
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors"
+                >
+                  <Settings className="w-4 h-4" />
+                  Profile Settings
+                </motion.button>
               </div>
-              
-              {/* Quick Stats */}
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                <div className="text-center p-2 bg-red-50 rounded-lg">
-                  <div className="text-lg font-bold text-red-600">{assetCounts.Delete}</div>
-                  <div className="text-xs text-red-600">Delete</div>
-                </div>
-                <div className="text-center p-2 bg-blue-50 rounded-lg">
-                  <div className="text-lg font-bold text-blue-600">{assetCounts.Transfer}</div>
-                  <div className="text-xs text-blue-600">Transfer</div>
-                </div>
-                <div className="text-center p-2 bg-yellow-50 rounded-lg">
-                  <div className="text-lg font-bold text-yellow-600">{assetCounts.Archive}</div>
-                  <div className="text-xs text-yellow-600">Archive</div>
-                </div>
-              </div>
-              
-              <p className="text-sm text-gray-500 text-center">{assets.length} total assets</p>
             </div>
           </motion.div>
         </div>
