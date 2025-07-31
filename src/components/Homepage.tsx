@@ -220,12 +220,29 @@ export function Homepage() {
                 <motion.img
                   src="https://images.pexels.com/photos/5380664/pexels-photo-5380664.jpeg?auto=compress&cs=tinysrgb&w=1200"
                   alt="Digital privacy and security"
-                  className="w-full h-96 object-cover rounded-2xl shadow-2xl"
+                  className="w-full h-96 object-cover rounded-2xl shadow-2xl cursor-pointer"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.8, delay: 0.4 }}
+                  whileHover={{ 
+                    scale: 1.05,
+                    y: -10,
+                    boxShadow: "0 25px 50px rgba(0, 0, 0, 0.3)",
+                    rotateY: 5,
+                    rotateX: 5
+                  }}
+                  transition={{ 
+                    duration: 0.8, 
+                    delay: 0.4,
+                    hover: { duration: 0.3, ease: "easeOut" }
+                  }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl"></div>
+                <motion.div 
+                  className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl"
+                  whileHover={{
+                    background: "linear-gradient(to top, rgba(0,0,0,0.1), transparent)"
+                  }}
+                  transition={{ duration: 0.3 }}
+                ></motion.div>
               </div>
             </motion.div>
           </motion.div>
@@ -233,25 +250,85 @@ export function Homepage() {
 
         {/* Floating Elements */}
         <motion.div
-          className="absolute top-20 left-10 w-20 h-20 bg-blue-200 rounded-full opacity-60"
+          className="absolute top-20 left-10 w-32 h-32 bg-blue-200 rounded-full opacity-70"
           animate={{
-            y: [0, -20, 0],
-            rotate: [0, 180, 360]
+            y: [0, -30, 0],
+            x: [0, 15, 0],
+            rotate: [0, 180, 360],
+            scale: [1, 1.2, 1]
           }}
           transition={{
-            duration: 6,
+            duration: 8,
             repeat: Infinity,
             ease: "easeInOut"
           }}
         />
         <motion.div
-          className="absolute top-40 right-20 w-16 h-16 bg-indigo-200 rounded-full opacity-60"
+          className="absolute top-40 right-20 w-24 h-24 bg-indigo-200 rounded-full opacity-70"
           animate={{
-            y: [0, 20, 0],
-            rotate: [360, 180, 0]
+            y: [0, 25, 0],
+            x: [0, -10, 0],
+            rotate: [360, 180, 0],
+            scale: [1, 0.8, 1.1, 1]
           }}
           transition={{
-            duration: 8,
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute top-60 left-1/4 w-16 h-16 bg-purple-200 rounded-full opacity-60"
+          animate={{
+            y: [0, -20, 10, 0],
+            x: [0, 20, -5, 0],
+            rotate: [0, 90, 270, 360],
+            scale: [1, 1.3, 0.9, 1]
+          }}
+          transition={{
+            duration: 12,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute bottom-40 right-1/3 w-20 h-20 bg-cyan-200 rounded-full opacity-65"
+          animate={{
+            y: [0, 15, -25, 0],
+            x: [0, -15, 10, 0],
+            rotate: [0, -90, -180, -360],
+            scale: [1, 1.1, 1.4, 1]
+          }}
+          transition={{
+            duration: 9,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute top-32 right-1/4 w-14 h-14 bg-pink-200 rounded-full opacity-55"
+          animate={{
+            y: [0, -15, 20, 0],
+            x: [0, 25, -10, 0],
+            rotate: [0, 120, 240, 360],
+            scale: [1, 0.7, 1.2, 1]
+          }}
+          transition={{
+            duration: 11,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute bottom-20 left-1/3 w-28 h-28 bg-green-200 rounded-full opacity-50"
+          animate={{
+            y: [0, 30, -10, 0],
+            x: [0, -20, 15, 0],
+            rotate: [0, -45, -135, -360],
+            scale: [1, 1.25, 0.85, 1]
+          }}
+          transition={{
+            duration: 13,
             repeat: Infinity,
             ease: "easeInOut"
           }}
@@ -435,7 +512,7 @@ export function Homepage() {
               Start Protecting Your Digital Legacy Today
             </h2>
             <p className="text-xl text-blue-100 mb-8 leading-relaxed">
-              Join thousands of users who have taken control of their digital afterlife. 
+              Join and control of your digital afterlife. 
               Create your digital will in minutes and gain peace of mind.
             </p>
             
@@ -486,6 +563,7 @@ export function Homepage() {
             <div className="text-center md:text-right">
               <p className="text-gray-400">
                 © 2025 DataGhost. All rights reserved.
+                Made with ❤️ by the DataGhost Team
               </p>
               <p className="text-gray-500 text-sm mt-1">
                 Protecting your digital legacy with care and security.
