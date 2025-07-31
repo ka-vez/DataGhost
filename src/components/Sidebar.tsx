@@ -23,6 +23,7 @@ import { AssetModal } from './AssetModal'
 import { FileUploadModal } from './FileUploadModal'
 import { UserProfileModal } from './UserProfileModal'
 import { AssetCard } from './AssetCard'
+import { AlertToast } from './AlertToast'
 import { generateDigitalWillPDF } from '../utils/pdfGenerator'
 import { useAuth } from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
@@ -42,6 +43,17 @@ export function Sidebar({ isOpen = false, onClose, isCollapsed = false, onToggle
   const [showUserProfile, setShowUserProfile] = useState(false)
   const [editingAsset, setEditingAsset] = useState<string | null>(null)
   const [downloadingPDF, setDownloadingPDF] = useState(false)
+  const [alert, setAlert] = useState<{
+    isVisible: boolean
+    type: 'success' | 'error' | 'warning' | 'info'
+    title: string
+    description?: string
+    actionType?: 'Delete' | 'Transfer' | 'Archive'
+  }>({
+    isVisible: false,
+    type: 'success',
+    title: ''
+  })
   const navigate = useNavigate()
 
   const handleDownloadWill = async () => {
@@ -63,11 +75,50 @@ export function Sidebar({ isOpen = false, onClose, isCollapsed = false, onToggle
   }
 
   const handleAssetSave = async (data: any) => {
-    if (editingAsset) {
-      await updateAsset(editingAsset, data)
-    } else {
-      await addAsset(data)
+    try {
+      if (editingAsset) {
+        await updateAsset(editingAsset, data)
+        showAlert('success', 'Asset Updated', `${data.platform_name} asset has been updated successfully.`, data.action)
+      } else {
+        await addAsset(data)
+        showAlert('success', 'Asset Added', `${data.platform_name} asset has been added successfully.`, data.action)
+      }
+      setShowAssetModal(false)
+      setEditingAsset(null)
+    } catch (error) {
+      console.error('Failed to save asset:', error)
+      showAlert('error', 'Error', 'Failed to save asset. Please try again.')
     }
+  }
+
+  const handleFileUploadSave = async (data: any) => {
+    try {
+      await addAsset(data)
+      showAlert('success', 'File Uploaded', `${data.platform_name} file has been uploaded successfully.`, data.action)
+      setShowFileUpload(false)
+    } catch (error) {
+      console.error('Failed to upload file:', error)
+      showAlert('error', 'Upload Failed', 'Failed to upload file. Please try again.')
+    }
+  }
+
+  const showAlert = (
+    type: 'success' | 'error' | 'warning' | 'info',
+    title: string,
+    description?: string,
+    actionType?: 'Delete' | 'Transfer' | 'Archive'
+  ) => {
+    setAlert({
+      isVisible: true,
+      type,
+      title,
+      description,
+      actionType
+    })
+  }
+
+  const hideAlert = () => {
+    setAlert(prev => ({ ...prev, isVisible: false }))
   }
 
   return (
@@ -302,12 +353,22 @@ export function Sidebar({ isOpen = false, onClose, isCollapsed = false, onToggle
       <FileUploadModal
         isOpen={showFileUpload}
         onClose={() => setShowFileUpload(false)}
-        onSave={addAsset}
+        onSave={handleFileUploadSave}
       />
 
       <UserProfileModal
         isOpen={showUserProfile}
         onClose={() => setShowUserProfile(false)}
+      />
+
+      {/* Alert Toast */}
+      <AlertToast
+        isVisible={alert.isVisible}
+        type={alert.type}
+        title={alert.title}
+        description={alert.description}
+        actionType={alert.actionType}
+        onClose={hideAlert}
       />
     </>
   )

@@ -1,19 +1,38 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Search,
   Filter,
   File,
-  ArrowLeft
+  ArrowLeft,
+  X,
+  AlertTriangle
 } from 'lucide-react'
 import { useDigitalAssets } from '../hooks/useDigitalAssets'
 import { AssetCard } from './AssetCard'
+import { AssetModal } from './AssetModal'
+import { AlertToast } from './AlertToast'
 import { useNavigate } from 'react-router-dom'
 
 export function AssetDetails() {
-  const { assets, loading, deleteAsset } = useDigitalAssets()
+  const { assets, loading, deleteAsset, updateAsset } = useDigitalAssets()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterAction, setFilterAction] = useState<string>('all')
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [editingAsset, setEditingAsset] = useState<string | null>(null)
+  const [deletingAsset, setDeletingAsset] = useState<string | null>(null)
+  const [alert, setAlert] = useState<{
+    isVisible: boolean
+    type: 'success' | 'error' | 'warning' | 'info'
+    title: string
+    description?: string
+    actionType?: 'Delete' | 'Transfer' | 'Archive'
+  }>({
+    isVisible: false,
+    type: 'success',
+    title: ''
+  })
   const navigate = useNavigate()
 
   // Filter assets based on search and filter
@@ -30,6 +49,90 @@ export function AssetDetails() {
     Transfer: assets.filter(a => a.action === 'Transfer').length,
     Archive: assets.filter(a => a.action === 'Archive').length
   }
+
+  const handleEdit = (assetId: string) => {
+    setEditingAsset(assetId)
+    setShowEditModal(true)
+  }
+
+  const handleDeleteClick = (assetId: string) => {
+    setDeletingAsset(assetId)
+    setShowDeleteConfirm(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (deletingAsset) {
+      const assetToDelete = assets.find(a => a.id === deletingAsset)
+      if (!assetToDelete) return
+
+      try {
+        await deleteAsset(deletingAsset)
+        
+        // Store deleted asset for recent activity tracking
+        const deletedAsset = {
+          id: assetToDelete.id,
+          platform_name: assetToDelete.platform_name,
+          action: assetToDelete.action,
+          deleted_at: new Date()
+        }
+        
+        const existingDeleted = JSON.parse(localStorage.getItem('deletedAssets') || '[]')
+        const updatedDeleted = [deletedAsset, ...existingDeleted.slice(0, 9)]
+        localStorage.setItem('deletedAssets', JSON.stringify(updatedDeleted))
+        
+        // Dispatch custom event for Dashboard to update
+        window.dispatchEvent(new Event('deletedAssetsUpdated'))
+        
+        showAlert('success', 'Asset Deleted', `${assetToDelete.platform_name} asset has been deleted successfully.`, assetToDelete.action)
+      } catch (error) {
+        console.error('Failed to delete asset:', error)
+        showAlert('error', 'Delete Failed', 'Failed to delete asset. Please try again.')
+      }
+      
+      setShowDeleteConfirm(false)
+      setDeletingAsset(null)
+    }
+  }
+
+  const handleEditSave = async (idOrData: any, data?: any) => {
+    // Handle both cases: editing (id, data) and adding (data only)
+    if (data) {
+      // Editing case: first param is id, second is data
+      try {
+        await updateAsset(idOrData, data)
+        showAlert('success', 'Asset Updated', `${data.platform_name} asset has been updated successfully.`, data.action)
+      } catch (error) {
+        console.error('Failed to update asset:', error)
+        showAlert('error', 'Update Failed', 'Failed to update asset. Please try again.')
+      }
+    } else {
+      // Adding case: first param is data
+      console.log('This should not happen in AssetDetails - adding is handled in Dashboard')
+    }
+    setShowEditModal(false)
+    setEditingAsset(null)
+  }
+
+  const showAlert = (
+    type: 'success' | 'error' | 'warning' | 'info',
+    title: string,
+    description?: string,
+    actionType?: 'Delete' | 'Transfer' | 'Archive'
+  ) => {
+    setAlert({
+      isVisible: true,
+      type,
+      title,
+      description,
+      actionType
+    })
+  }
+
+  const hideAlert = () => {
+    setAlert(prev => ({ ...prev, isVisible: false }))
+  }
+
+  const deletingAssetData = deletingAsset ? assets.find(a => a.id === deletingAsset) : null
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -135,11 +238,8 @@ export function AssetDetails() {
                   <AssetCard
                     asset={asset}
                     index={index}
-                    onEdit={(id) => {
-                      // Handle edit - you might want to add edit functionality here
-                      console.log('Edit asset:', id)
-                    }}
-                    onDelete={deleteAsset}
+                    onEdit={handleEdit}
+                    onDelete={handleDeleteClick}
                   />
                 </motion.div>
               ))}
@@ -147,6 +247,83 @@ export function AssetDetails() {
           )}
         </div>
       </div>
+
+      {/* Edit Modal */}
+      <AssetModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false)
+          setEditingAsset(null)
+        }}
+        onSave={handleEditSave}
+        asset={editingAsset ? assets.find(a => a.id === editingAsset) : undefined}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={() => setShowDeleteConfirm(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-xl shadow-xl max-w-md w-full p-6"
+            >
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Delete Asset</h3>
+                  <p className="text-sm text-gray-500">This action cannot be undone</p>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-gray-700">
+                  Are you sure you want to delete{' '}
+                  <span className="font-medium text-gray-900">
+                    {deletingAssetData?.platform_name}
+                  </span>
+                  ? This will permanently remove it from your digital will.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteConfirm}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Alert Toast */}
+      <AlertToast
+        isVisible={alert.isVisible}
+        type={alert.type}
+        title={alert.title}
+        description={alert.description}
+        actionType={alert.actionType}
+        onClose={hideAlert}
+      />
     </div>
   )
 } 

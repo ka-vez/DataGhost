@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, AlertTriangle, CheckCircle2, BarChart3, Users, Shield, Calendar, TrendingUp, Archive, Plus, Activity, Trash2, Upload, X } from 'lucide-react'
+import { Clock, AlertTriangle, CheckCircle2, BarChart3, Users, Shield, Calendar, TrendingUp, Archive, Plus, Activity, Trash2, Upload, X, Edit, Trash } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useDigitalAssets } from '../hooks/useDigitalAssets'
 import { useCheckins } from '../hooks/useCheckins'
@@ -9,10 +9,11 @@ import { Sidebar } from './Sidebar'
 import { ExecutionSummary } from './ExecutionSummary'
 import { AssetModal } from './AssetModal'
 import { FileUploadModal } from './FileUploadModal'
+import { AlertToast } from './AlertToast'
 
 export function Dashboard() {
   const { userProfile } = useAuth()
-  const { assets, loading: assetsLoading, addAsset } = useDigitalAssets()
+  const { assets, loading: assetsLoading, addAsset, refetch: refetchAssets } = useDigitalAssets()
   const { checkin, performCheckin, getStatus, getTimeUntilTrigger, getNextCheckinDate } = useCheckins()
   const [showExecution, setShowExecution] = useState(false)
   const [showAssetModal, setShowAssetModal] = useState(false)
@@ -28,13 +29,141 @@ export function Dashboard() {
     timeAgo: string
     timestamp: Date
   }>>([])
+  const [deletedAssets, setDeletedAssets] = useState<Array<{
+    id: string
+    platform_name: string
+    action: string
+    deleted_at: Date
+  }>>([])
+  const [alert, setAlert] = useState<{
+    isVisible: boolean
+    type: 'success' | 'error' | 'warning' | 'info'
+    title: string
+    description?: string
+    actionType?: 'Delete' | 'Transfer' | 'Archive'
+  }>({
+    isVisible: false,
+    type: 'success',
+    title: ''
+  })
 
   const status = getStatus()
 
-  // Update recent activities whenever assets or checkin data changes
+  // Load deleted assets from localStorage on mount
   useEffect(() => {
-    setRecentActivities(getRecentActivities())
-  }, [assets, checkin])
+    const loadDeletedAssets = () => {
+      const stored = localStorage.getItem('deletedAssets')
+      if (stored) {
+        try {
+          const parsedDeleted = JSON.parse(stored).map((item: any) => ({
+            ...item,
+            deleted_at: new Date(item.deleted_at)
+          }))
+          setDeletedAssets(parsedDeleted)
+        } catch (error) {
+          console.error('Error parsing stored deleted assets:', error)
+        }
+      }
+    }
+
+    loadDeletedAssets()
+
+    // Listen for localStorage changes (when assets are deleted from other components)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'deletedAssets') {
+        loadDeletedAssets()
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    
+    // Also listen for custom events for same-tab updates
+    const handleDeletedAssetsUpdate = () => {
+      loadDeletedAssets()
+    }
+    
+    window.addEventListener('deletedAssetsUpdated', handleDeletedAssetsUpdate)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('deletedAssetsUpdated', handleDeletedAssetsUpdate)
+    }
+  }, [])
+
+  // Track asset deletions for recent activity
+  const trackAssetDeletion = (asset: any) => {
+    const deletedAsset = {
+      id: asset.id,
+      platform_name: asset.platform_name,
+      action: asset.action,
+      deleted_at: new Date()
+    }
+    setDeletedAssets(prev => [deletedAsset, ...prev.slice(0, 9)]) // Keep last 10 deletions
+  }
+
+  // Update recent activities whenever assets, checkin data, or deletedAssets changes
+  useEffect(() => {
+    const activities: Array<{
+      id: string
+      type: 'checkin' | 'asset_added' | 'asset_updated' | 'asset_deleted'
+      title: string
+      description: string
+      timeAgo: string
+      timestamp: Date
+    }> = []
+
+    // Add check-in activity
+    if (checkin) {
+      activities.push({
+        id: `checkin-${checkin.id}`,
+        type: 'checkin',
+        title: 'System Check-in',
+        description: 'Dead man\'s switch timer reset',
+        timeAgo: getTimeAgo(new Date(checkin.last_checkin_at)),
+        timestamp: new Date(checkin.last_checkin_at)
+      })
+    }
+
+    // Add deleted asset activities
+    deletedAssets.forEach((deletedAsset) => {
+      activities.push({
+        id: `asset-deleted-${deletedAsset.id}`,
+        type: 'asset_deleted',
+        title: `${deletedAsset.platform_name} deleted`,
+        description: `${deletedAsset.action} asset removed`,
+        timeAgo: getTimeAgo(deletedAsset.deleted_at),
+        timestamp: deletedAsset.deleted_at
+      })
+    })
+
+    // Add asset activities (latest 3 assets)
+    assets.slice(0, 3).forEach((asset) => {
+      // Add creation activity
+      activities.push({
+        id: `asset-created-${asset.id}`,
+        type: 'asset_added',
+        title: `${asset.platform_name} added`,
+        description: `${asset.action}`,
+        timeAgo: getTimeAgo(new Date(asset.created_at)),
+        timestamp: new Date(asset.created_at)
+      })
+
+      // Add update activity if asset was updated (created_at !== updated_at)
+      if (asset.updated_at && asset.created_at !== asset.updated_at) {
+        activities.push({
+          id: `asset-updated-${asset.id}`,
+          type: 'asset_updated',
+          title: `${asset.platform_name} updated`,
+          description: `Action: ${asset.action}`,
+          timeAgo: getTimeAgo(new Date(asset.updated_at)),
+          timestamp: new Date(asset.updated_at)
+        })
+      }
+    })
+
+    // Sort by timestamp (most recent first) and set the state
+    setRecentActivities(activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()))
+  }, [assets, checkin, deletedAssets])
 
   const handleCheckin = async () => {
     try {
@@ -47,10 +176,42 @@ export function Dashboard() {
   const handleAssetSave = async (data: any) => {
     try {
       await addAsset(data)
+      showAlert('success', 'Asset Added', `${data.platform_name} asset has been added successfully.`, data.action)
       setShowAssetModal(false)
     } catch (error) {
       console.error('Failed to save asset:', error)
+      showAlert('error', 'Error', 'Failed to save asset. Please try again.')
     }
+  }
+
+  const handleFileUploadSave = async (data: any) => {
+    try {
+      await addAsset(data)
+      showAlert('success', 'File Uploaded', `${data.platform_name} file has been uploaded successfully.`, data.action)
+      setShowFileUpload(false)
+    } catch (error) {
+      console.error('Failed to upload file:', error)
+      showAlert('error', 'Upload Failed', 'Failed to upload file. Please try again.')
+    }
+  }
+
+  const showAlert = (
+    type: 'success' | 'error' | 'warning' | 'info',
+    title: string,
+    description?: string,
+    actionType?: 'Delete' | 'Transfer' | 'Archive'
+  ) => {
+    setAlert({
+      isVisible: true,
+      type,
+      title,
+      description,
+      actionType
+    })
+  }
+
+  const hideAlert = () => {
+    setAlert(prev => ({ ...prev, isVisible: false }))
   }
 
   const getStatusColor = () => {
@@ -119,22 +280,48 @@ export function Dashboard() {
       })
     }
 
+    // Add deleted asset activities
+    deletedAssets.forEach((deletedAsset) => {
+      activities.push({
+        id: `asset-deleted-${deletedAsset.id}`,
+        type: 'asset_deleted',
+        title: `${deletedAsset.platform_name} deleted`,
+        description: `${deletedAsset.action} asset removed`,
+        timeAgo: getTimeAgo(deletedAsset.deleted_at),
+        timestamp: deletedAsset.deleted_at
+      })
+    })
+
     // Add asset activities (latest 3 assets)
     assets.slice(0, 3).forEach((asset) => {
+      // Add creation activity
       activities.push({
-        id: `asset-${asset.id}`,
+        id: `asset-created-${asset.id}`,
         type: 'asset_added',
         title: `${asset.platform_name} added`,
         description: `${asset.action}`,
         timeAgo: getTimeAgo(new Date(asset.created_at)),
         timestamp: new Date(asset.created_at)
       })
+
+      // Add update activity if asset was updated (created_at !== updated_at)
+      if (asset.updated_at && asset.created_at !== asset.updated_at) {
+        activities.push({
+          id: `asset-updated-${asset.id}`,
+          type: 'asset_updated',
+          title: `${asset.platform_name} updated`,
+          description: `Action: ${asset.action}`,
+          timeAgo: getTimeAgo(new Date(asset.updated_at)),
+          timestamp: new Date(asset.updated_at)
+        })
+      }
     })
 
     // Sort by timestamp (most recent first)
     return activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
   }
 
+  // Function to get all activities
   const getAllActivities = () => {
     const activities: Array<{
       id: string
@@ -157,16 +344,41 @@ export function Dashboard() {
       })
     }
 
-    // Add ALL asset activities
-    assets.forEach((asset) => {
+    // Add deleted asset activities
+    deletedAssets.forEach((deletedAsset) => {
       activities.push({
-        id: `asset-${asset.id}`,
+        id: `asset-deleted-${deletedAsset.id}`,
+        type: 'asset_deleted',
+        title: `${deletedAsset.platform_name} deleted`,
+        description: `${deletedAsset.action} asset removed`,
+        timeAgo: getTimeAgo(deletedAsset.deleted_at),
+        timestamp: deletedAsset.deleted_at
+      })
+    })
+
+    // Add asset activities (all assets)
+    assets.forEach((asset) => {
+      // Add creation activity
+      activities.push({
+        id: `asset-created-${asset.id}`,
         type: 'asset_added',
         title: `${asset.platform_name} added`,
-        description: `${asset.action} - Created on ${new Date(asset.created_at).toLocaleDateString()}`,
+        description: `${asset.action}`,
         timeAgo: getTimeAgo(new Date(asset.created_at)),
         timestamp: new Date(asset.created_at)
       })
+
+      // Add update activity if asset was updated (created_at !== updated_at)
+      if (asset.updated_at && asset.created_at !== asset.updated_at) {
+        activities.push({
+          id: `asset-updated-${asset.id}`,
+          type: 'asset_updated',
+          title: `${asset.platform_name} updated`,
+          description: `Action: ${asset.action}`,
+          timeAgo: getTimeAgo(new Date(asset.updated_at)),
+          timestamp: new Date(asset.updated_at)
+        })
+      }
     })
 
     // Sort by timestamp (most recent first)
@@ -448,12 +660,14 @@ export function Dashboard() {
             >
               <div className="flex items-center justify-between p-4 sm:p-6 pb-3 sm:pb-4 border-b border-gray-100">
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Recent Activity</h2>
-                <button 
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => setShowAllActivities(true)}
-                  className="text-xs sm:text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                  className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
                 >
                   View All
-                </button>
+                </motion.button>
               </div>
               
               <div className="flex-1 p-4 sm:p-6 pt-3 sm:pt-4">
@@ -473,10 +687,10 @@ export function Dashboard() {
                   </div>
                 ) : (
                   <div 
-                    key={`activities-${assets.length}-${checkin?.last_checkin_at || 'no-checkin'}`}
-                    className="space-y-2 sm:space-y-3 max-h-64 sm:max-h-96 overflow-y-auto pr-1 sm:pr-2"
+                    key={`activities-${assets.length}-${checkin?.last_checkin_at || 'no-checkin'}-${deletedAssets.length}`}
+                    className="space-y-2 sm:space-y-3"
                   >
-                    {getRecentActivities().slice(0, 4).map((activity, index) => (
+                    {recentActivities.slice(0, 4).map((activity, index) => (
                       <motion.div
                         key={activity.id}
                         initial={{ opacity: 0, x: -20 }}
@@ -490,7 +704,7 @@ export function Dashboard() {
                             (activity.description === 'Delete' ? 'bg-red-100' :
                              activity.description === 'Archive' ? 'bg-yellow-100' :
                              'bg-blue-100') :
-                          activity.type === 'asset_updated' ? 'bg-yellow-100' :
+                          activity.type === 'asset_updated' ? 'bg-orange-100' :
                           activity.type === 'asset_deleted' ? 'bg-red-100' : 'bg-gray-100'
                         }`}>
                           {activity.type === 'checkin' ? (
@@ -502,9 +716,9 @@ export function Dashboard() {
                               'text-blue-600'
                             }`} />
                           ) : activity.type === 'asset_updated' ? (
-                            <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600" />
+                            <Edit className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
                           ) : activity.type === 'asset_deleted' ? (
-                            <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
+                            <Trash className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
                           ) : (
                             <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                           )}
@@ -518,7 +732,7 @@ export function Dashboard() {
                         <span className={`px-2 sm:px-3 py-1 text-xs font-medium rounded-full flex-shrink-0 ${
                           activity.type === 'checkin' ? 'bg-green-100 text-green-700' :
                           activity.type === 'asset_added' ? 'bg-blue-100 text-blue-700' :
-                          activity.type === 'asset_updated' ? 'bg-yellow-100 text-yellow-700' :
+                          activity.type === 'asset_updated' ? 'bg-orange-100 text-orange-700' :
                           activity.type === 'asset_deleted' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
                         }`}>
                           {activity.type === 'checkin' ? 'Check-in' :
@@ -528,14 +742,6 @@ export function Dashboard() {
                         </span>
                       </motion.div>
                     ))}
-                    
-                    {getRecentActivities().length > 4 && (
-                      <div className="text-center pt-3 sm:pt-4 border-t border-gray-100 mt-3 sm:mt-4">
-                        <button className="text-xs sm:text-sm text-blue-600 hover:text-blue-700 font-medium px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors">
-                          View {getRecentActivities().length - 4} more activities
-                        </button>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -582,7 +788,17 @@ export function Dashboard() {
       <FileUploadModal
         isOpen={showFileUpload}
         onClose={() => setShowFileUpload(false)}
-        onSave={addAsset}
+        onSave={handleFileUploadSave}
+      />
+
+      {/* Alert Toast */}
+      <AlertToast
+        isVisible={alert.isVisible}
+        type={alert.type}
+        title={alert.title}
+        description={alert.description}
+        actionType={alert.actionType}
+        onClose={hideAlert}
       />
 
       {/* All Activities Modal */}
@@ -596,67 +812,91 @@ export function Dashboard() {
             onClick={() => setShowAllActivities(false)}
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col"
+              className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[80vh] overflow-hidden"
             >
               {/* Modal Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-900">All Activities</h2>
                 <button
                   onClick={() => setShowAllActivities(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100"
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 h-5 text-gray-500" />
                 </button>
               </div>
 
               {/* Modal Content */}
-              <div className="flex-1 overflow-y-auto p-6">
-                <div className="space-y-4">
-                  {getAllActivities().map((activity, index) => (
-                    <motion.div
-                      key={activity.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      <div className={`p-2 rounded-lg flex-shrink-0 ${
-                        activity.type === 'checkin' 
-                          ? 'bg-green-100 text-green-600' 
-                          : 'bg-blue-100 text-blue-600'
-                      }`}>
-                        {activity.type === 'checkin' ? (
-                          <CheckCircle2 className="w-5 h-5" />
-                        ) : (
-                          <Plus className="w-5 h-5" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <h3 className="font-medium text-gray-900 text-sm">{activity.title}</h3>
-                          <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
-                            {activity.timeAgo}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600">{activity.description}</p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {activity.timestamp.toLocaleString()}
-                        </p>
-                      </div>
-                    </motion.div>
-                  ))}
-                  
-                  {getAllActivities().length === 0 && (
-                    <div className="text-center py-12">
-                      <Activity className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500">No activities found</p>
+              <div className="p-6 overflow-y-auto max-h-[60vh]">
+                {getAllActivities().length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                      <Activity className="w-8 h-8 text-gray-400" />
                     </div>
-                  )}
-                </div>
+                    <p className="text-gray-500 font-medium mb-2">No activities yet</p>
+                    <p className="text-sm text-gray-400">
+                      Activities will appear here as you use the system
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {getAllActivities().map((activity, index) => (
+                      <motion.div
+                        key={activity.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+                      >
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          activity.type === 'checkin' ? 'bg-green-100' :
+                          activity.type === 'asset_added' ? 
+                            (activity.description === 'Delete' ? 'bg-red-100' :
+                             activity.description === 'Archive' ? 'bg-yellow-100' :
+                             'bg-blue-100') :
+                          activity.type === 'asset_updated' ? 'bg-orange-100' :
+                          activity.type === 'asset_deleted' ? 'bg-red-100' : 'bg-gray-100'
+                        }`}>
+                          {activity.type === 'checkin' ? (
+                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                          ) : activity.type === 'asset_added' ? (
+                            <Plus className={`w-5 h-5 ${
+                              activity.description === 'Delete' ? 'text-red-600' :
+                              activity.description === 'Archive' ? 'text-yellow-600' :
+                              'text-blue-600'
+                            }`} />
+                          ) : activity.type === 'asset_updated' ? (
+                            <Edit className="w-5 h-5 text-orange-600" />
+                          ) : activity.type === 'asset_deleted' ? (
+                            <Trash className="w-5 h-5 text-red-600" />
+                          ) : (
+                            <Activity className="w-5 h-5 text-gray-600" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900">{activity.title}</p>
+                          <p className="text-sm text-gray-500">
+                            {activity.description} • {activity.timeAgo}
+                          </p>
+                        </div>
+                        <span className={`px-3 py-1 text-xs font-medium rounded-full flex-shrink-0 ${
+                          activity.type === 'checkin' ? 'bg-green-100 text-green-700' :
+                          activity.type === 'asset_added' ? 'bg-blue-100 text-blue-700' :
+                          activity.type === 'asset_updated' ? 'bg-orange-100 text-orange-700' :
+                          activity.type === 'asset_deleted' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {activity.type === 'checkin' ? 'Check-in' :
+                           activity.type === 'asset_added' ? 'Added' :
+                           activity.type === 'asset_updated' ? 'Updated' :
+                           activity.type === 'asset_deleted' ? 'Deleted' : 'Activity'}
+                        </span>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>

@@ -24,11 +24,12 @@ export function useDigitalAssets() {
 
   useEffect(() => {
     if (user) {
+      console.log('Setting up assets subscription for user:', user.id)
       fetchAssets()
       
       // Set up real-time subscription for immediate updates
       const channel = supabase
-        .channel('digital_assets_changes')
+        .channel(`digital_assets_changes_${user.id}`)
         .on(
           'postgres_changes',
           {
@@ -38,20 +39,35 @@ export function useDigitalAssets() {
             filter: `user_id=eq.${user.id}`
           },
           (payload) => {
+            console.log('Real-time subscription event:', payload.eventType, payload)
             if (payload.eventType === 'INSERT') {
-              setAssets(prev => [payload.new as DigitalAsset, ...prev])
+              console.log('Adding asset to state via subscription:', payload.new)
+              setAssets(prev => {
+                // Check if asset already exists to prevent duplicates
+                const exists = prev.some(asset => asset.id === payload.new.id)
+                if (exists) {
+                  console.log('Asset already exists, skipping duplicate')
+                  return prev
+                }
+                return [payload.new as DigitalAsset, ...prev]
+              })
             } else if (payload.eventType === 'UPDATE') {
+              console.log('Updating asset via subscription:', payload.new)
               setAssets(prev => prev.map(asset => 
                 asset.id === payload.new.id ? payload.new as DigitalAsset : asset
               ))
             } else if (payload.eventType === 'DELETE') {
+              console.log('Deleting asset via subscription:', payload.old)
               setAssets(prev => prev.filter(asset => asset.id !== payload.old.id))
             }
           }
         )
-        .subscribe()
+        .subscribe((status) => {
+          console.log('Subscription status:', status)
+        })
 
       return () => {
+        console.log('Cleaning up assets subscription')
         supabase.removeChannel(channel)
       }
     }
@@ -75,14 +91,28 @@ export function useDigitalAssets() {
 
   const addAsset = async (asset: Omit<DigitalAsset, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      console.log('addAsset called with:', asset)
       const { data, error } = await supabase
         .from('digital_assets')
         .insert([{ ...asset, user_id: user!.id }])
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase insert error:', error)
+        throw error
+      }
+      console.log('Asset inserted successfully:', data)
+      
+      // Add to state immediately for responsive UI
       setAssets(prev => [data, ...prev])
+      
+      // Also trigger a refetch after a delay to ensure consistency
+      setTimeout(() => {
+        console.log('Triggering refetch to ensure consistency')
+        fetchAssets()
+      }, 1000)
+      
       return data
     } catch (error) {
       console.error('Error adding asset:', error)
@@ -97,11 +127,24 @@ export function useDigitalAssets() {
         .update(updates)
         .eq('id', id)
         .select()
-        .single()
 
-      if (error) throw error
-      setAssets(prev => prev.map(asset => asset.id === id ? data : asset))
-      return data
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
+      
+      // Ensure we have exactly one updated row
+      if (!data || data.length === 0) {
+        throw new Error('No asset found with the given ID')
+      }
+      
+      if (data.length > 1) {
+        throw new Error('Multiple assets found with the same ID')
+      }
+      
+      const updatedAsset = data[0]
+      setAssets(prev => prev.map(asset => asset.id === id ? updatedAsset : asset))
+      return updatedAsset
     } catch (error) {
       console.error('Error updating asset:', error)
       throw error
@@ -110,13 +153,36 @@ export function useDigitalAssets() {
 
   const deleteAsset = async (id: string) => {
     try {
+      // Get the asset data before deletion for activity tracking
+      const assetToDelete = assets.find(asset => asset.id === id)
+      
       const { error } = await supabase
         .from('digital_assets')
         .delete()
         .eq('id', id)
 
       if (error) throw error
+      
       setAssets(prev => prev.filter(asset => asset.id !== id))
+      
+      // Track deletion in localStorage for activity tracking
+      if (assetToDelete) {
+        const deletedAssets = JSON.parse(localStorage.getItem('deletedAssets') || '[]')
+        const deletionRecord = {
+          id: assetToDelete.id,
+          platform_name: assetToDelete.platform_name,
+          action: assetToDelete.action,
+          deleted_at: new Date().toISOString()
+        }
+        deletedAssets.unshift(deletionRecord)
+        // Keep only last 10 deletions
+        localStorage.setItem('deletedAssets', JSON.stringify(deletedAssets.slice(0, 10)))
+        
+        // Dispatch custom event for same-tab updates
+        window.dispatchEvent(new CustomEvent('deletedAssetsUpdated'))
+      }
+      
+      return assetToDelete
     } catch (error) {
       console.error('Error deleting asset:', error)
       throw error

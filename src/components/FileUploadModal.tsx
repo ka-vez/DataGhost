@@ -18,7 +18,7 @@ interface UploadedFile {
 }
 
 export function FileUploadModal({ isOpen, onClose, onSave }: FileUploadModalProps) {
-  const { userProfile } = useAuth()
+  const { userProfile, user } = useAuth()
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [action, setAction] = useState<'Delete' | 'Transfer' | 'Archive'>('Archive')
   const [recipientEmail, setRecipientEmail] = useState('')
@@ -86,12 +86,16 @@ export function FileUploadModal({ isOpen, onClose, onSave }: FileUploadModalProp
     try {
       // Upload files to Supabase storage
       for (const uploadedFile of files) {
-        if (!userProfile?.id) {
+        if (!user?.id) {
           throw new Error('User not authenticated')
         }
 
-        // Create file path: user_id/filename
-        const filePath = `${userProfile.id}/${uploadedFile.name}`
+        console.log('Uploading file for user:', user.id)
+        console.log('User profile ID:', userProfile?.id)
+        console.log('File details:', { name: uploadedFile.name, size: uploadedFile.file.size })
+
+        // Create file path: user_id/filename - use the authenticated user ID
+        const filePath = `${user.id}/${uploadedFile.name}`
         
         // Upload file to Supabase storage
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -102,13 +106,18 @@ export function FileUploadModal({ isOpen, onClose, onSave }: FileUploadModalProp
           })
 
         if (uploadError) {
+          console.error('Storage upload error:', uploadError)
           throw new Error(`Failed to upload ${uploadedFile.name}: ${uploadError.message}`)
         }
+
+        console.log('File uploaded successfully:', uploadData)
 
         // Get public URL for the uploaded file
         const { data: { publicUrl } } = supabase.storage
           .from('digital-assets')
           .getPublicUrl(filePath)
+
+        console.log('Public URL generated:', publicUrl)
 
         const assetData = {
           platform_name: `File: ${uploadedFile.name}`,
@@ -122,7 +131,9 @@ export function FileUploadModal({ isOpen, onClose, onSave }: FileUploadModalProp
           storage_path: filePath
         }
 
+        console.log('Saving asset data:', assetData)
         await onSave(assetData)
+        console.log('Asset saved successfully')
       }
 
       // Reset form

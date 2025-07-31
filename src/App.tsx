@@ -47,6 +47,11 @@ function App() {
             </ProtectedRoute>
           }
         />
+        {/* Catch-all route - redirect to dashboard if authenticated, otherwise to home */}
+        <Route 
+          path="*" 
+          element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/" replace />} 
+        />
       </Routes>
     </Router>
   )

@@ -35,6 +35,23 @@ export function AssetCard({ asset, index, onEdit, onDelete }: AssetCardProps) {
       const minutes = parseInt(parts[1])
       if (hours === 0 && minutes === 0) return 'Immediately'
       if (hours === 0) return `${minutes} minutes`
+      
+      // Convert large hour values to days
+      if (hours >= 24) {
+        const days = Math.floor(hours / 24)
+        const remainingHours = hours % 24
+        if (remainingHours === 0) {
+          if (days === 1) return '1 day'
+          if (days === 7) return '1 week'
+          if (days === 30) return '1 month'
+          if (days === 180) return '6 months'
+          if (days === 365) return '1 year'
+          return `${days} days`
+        } else {
+          return `${days} days ${remainingHours}h`
+        }
+      }
+      
       if (minutes === 0) return `${hours} hours`
       return `${hours}h ${minutes}m`
     }
