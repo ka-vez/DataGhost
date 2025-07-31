@@ -81,19 +81,47 @@ export function Homepage() {
             </div>
 
             <div className="flex items-center gap-4">
-              <Link
-                to="/auth"
-                className="text-gray-600 hover:text-gray-900 transition-colors"
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
               >
-                Sign In
-              </Link>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link
+                  to="/auth"
+                  className="relative px-6 py-2.5 text-gray-700 font-medium rounded-xl hover:text-blue-600 transition-all duration-300 group overflow-hidden"
+                >
+                  <span className="relative z-10">Sign In</span>
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl opacity-0 group-hover:opacity-100"
+                    initial={false}
+                    whileHover={{ scale: 1 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </Link>
+              </motion.div>
+              <motion.div 
+                whileHover={{ 
+                  scale: 1.05,
+                  boxShadow: "0 8px 25px rgba(59, 130, 246, 0.4)"
+                }} 
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="relative"
+              >
                 <Link
                   to="/auth"
                   state={{ isSignUp: true }}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  className="relative inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
                 >
-                  Get Started
+                  <span className="relative z-10">Get Started</span>
+                  <motion.div
+                    animate={{ x: [0, 3, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className="relative z-10"
+                  >
+                    <ArrowRight className="w-4 h-4" />
+                  </motion.div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </Link>
               </motion.div>
             </div>
@@ -130,23 +158,56 @@ export function Homepage() {
               variants={itemVariants}
               className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
             >
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <motion.div 
+                whileHover={{ 
+                  scale: 1.05,
+                  y: -3,
+                  boxShadow: "0 15px 35px rgba(59, 130, 246, 0.4)"
+                }} 
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="relative"
+              >
                 <Link
                   to="/auth"
                   state={{ isSignUp: true }}
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold text-lg hover:bg-blue-700 transition-colors shadow-lg"
+                  className="relative inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden group"
                 >
-                  Start Your Digital Will
-                  <ArrowRight className="w-5 h-5" />
+                  <span className="relative z-10">Start Your Digital Will</span>
+                  <motion.div
+                    animate={{ x: [0, 5, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className="relative z-10"
+                  >
+                    <ArrowRight className="w-5 h-5" />
+                  </motion.div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </Link>
               </motion.div>
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-gray-700 rounded-xl font-semibold text-lg hover:bg-gray-50 transition-colors shadow-lg border border-gray-200"
+                whileHover={{ 
+                  scale: 1.05,
+                  y: -3,
+                  boxShadow: "0 15px 35px rgba(0, 0, 0, 0.15)"
+                }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="relative inline-flex items-center gap-3 px-8 py-4 bg-white/95 backdrop-blur-sm text-gray-700 rounded-xl font-semibold text-lg shadow-xl hover:shadow-2xl border border-gray-200/50 hover:border-gray-300/50 transition-all duration-300 group overflow-hidden"
               >
-                <Lock className="w-5 h-5" />
-                Learn More
+                <motion.div
+                  animate={{ rotate: [0, 5, -5, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                  className="relative z-10"
+                >
+                  <Lock className="w-5 h-5 text-blue-600" />
+                </motion.div>
+                <span className="relative z-10">Learn More</span>
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-blue-50 to-indigo-50 opacity-0 group-hover:opacity-70"
+                  initial={false}
+                  whileHover={{ scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                />
               </motion.button>
             </motion.div>
 
@@ -159,12 +220,29 @@ export function Homepage() {
                 <motion.img
                   src="https://images.pexels.com/photos/5380664/pexels-photo-5380664.jpeg?auto=compress&cs=tinysrgb&w=1200"
                   alt="Digital privacy and security"
-                  className="w-full h-96 object-cover rounded-2xl shadow-2xl"
+                  className="w-full h-96 object-cover rounded-2xl shadow-2xl cursor-pointer"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.8, delay: 0.4 }}
+                  whileHover={{ 
+                    scale: 1.05,
+                    y: -10,
+                    boxShadow: "0 25px 50px rgba(0, 0, 0, 0.3)",
+                    rotateY: 5,
+                    rotateX: 5
+                  }}
+                  transition={{ 
+                    duration: 0.8, 
+                    delay: 0.4,
+                    hover: { duration: 0.3, ease: "easeOut" }
+                  }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl"></div>
+                <motion.div 
+                  className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl"
+                  whileHover={{
+                    background: "linear-gradient(to top, rgba(0,0,0,0.1), transparent)"
+                  }}
+                  transition={{ duration: 0.3 }}
+                ></motion.div>
               </div>
             </motion.div>
           </motion.div>
@@ -172,25 +250,85 @@ export function Homepage() {
 
         {/* Floating Elements */}
         <motion.div
-          className="absolute top-20 left-10 w-20 h-20 bg-blue-200 rounded-full opacity-60"
+          className="absolute top-20 left-10 w-32 h-32 bg-blue-200 rounded-full opacity-70"
           animate={{
-            y: [0, -20, 0],
-            rotate: [0, 180, 360]
+            y: [0, -30, 0],
+            x: [0, 15, 0],
+            rotate: [0, 180, 360],
+            scale: [1, 1.2, 1]
           }}
           transition={{
-            duration: 6,
+            duration: 8,
             repeat: Infinity,
             ease: "easeInOut"
           }}
         />
         <motion.div
-          className="absolute top-40 right-20 w-16 h-16 bg-indigo-200 rounded-full opacity-60"
+          className="absolute top-40 right-20 w-24 h-24 bg-indigo-200 rounded-full opacity-70"
           animate={{
-            y: [0, 20, 0],
-            rotate: [360, 180, 0]
+            y: [0, 25, 0],
+            x: [0, -10, 0],
+            rotate: [360, 180, 0],
+            scale: [1, 0.8, 1.1, 1]
           }}
           transition={{
-            duration: 8,
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute top-60 left-1/4 w-16 h-16 bg-purple-200 rounded-full opacity-60"
+          animate={{
+            y: [0, -20, 10, 0],
+            x: [0, 20, -5, 0],
+            rotate: [0, 90, 270, 360],
+            scale: [1, 1.3, 0.9, 1]
+          }}
+          transition={{
+            duration: 12,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute bottom-40 right-1/3 w-20 h-20 bg-cyan-200 rounded-full opacity-65"
+          animate={{
+            y: [0, 15, -25, 0],
+            x: [0, -15, 10, 0],
+            rotate: [0, -90, -180, -360],
+            scale: [1, 1.1, 1.4, 1]
+          }}
+          transition={{
+            duration: 9,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute top-32 right-1/4 w-14 h-14 bg-pink-200 rounded-full opacity-55"
+          animate={{
+            y: [0, -15, 20, 0],
+            x: [0, 25, -10, 0],
+            rotate: [0, 120, 240, 360],
+            scale: [1, 0.7, 1.2, 1]
+          }}
+          transition={{
+            duration: 11,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute bottom-20 left-1/3 w-28 h-28 bg-green-200 rounded-full opacity-50"
+          animate={{
+            y: [0, 30, -10, 0],
+            x: [0, -20, 15, 0],
+            rotate: [0, -45, -135, -360],
+            scale: [1, 1.25, 0.85, 1]
+          }}
+          transition={{
+            duration: 13,
             repeat: Infinity,
             ease: "easeInOut"
           }}
@@ -374,21 +512,34 @@ export function Homepage() {
               Start Protecting Your Digital Legacy Today
             </h2>
             <p className="text-xl text-blue-100 mb-8 leading-relaxed">
-              Join thousands of users who have taken control of their digital afterlife. 
+              Join and control of your digital afterlife. 
               Create your digital will in minutes and gain peace of mind.
             </p>
             
             <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ 
+                scale: 1.05,
+                y: -3,
+                boxShadow: "0 20px 40px rgba(255, 255, 255, 0.3)"
+              }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="relative"
             >
               <Link
                 to="/auth"
                 state={{ isSignUp: true }}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-600 rounded-xl font-semibold text-lg hover:bg-gray-50 transition-colors shadow-lg"
+                className="relative inline-flex items-center gap-3 px-8 py-4 bg-white text-blue-600 rounded-xl font-semibold text-lg shadow-2xl hover:shadow-3xl transition-all duration-300 overflow-hidden group"
               >
-                Create Your Digital Will
-                <ArrowRight className="w-5 h-5" />
+                <span className="relative z-10">Create Your Digital Will</span>
+                <motion.div
+                  animate={{ x: [0, 5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  className="relative z-10"
+                >
+                  <ArrowRight className="w-5 h-5" />
+                </motion.div>
+                <div className="absolute inset-0 bg-gradient-to-r from-gray-50 to-blue-50 opacity-0 group-hover:opacity-50 transition-opacity duration-300"></div>
               </Link>
             </motion.div>
           </motion.div>
@@ -412,6 +563,7 @@ export function Homepage() {
             <div className="text-center md:text-right">
               <p className="text-gray-400">
                 © 2025 DataGhost. All rights reserved.
+                Made with ❤️ by the DataGhost Team
               </p>
               <p className="text-gray-500 text-sm mt-1">
                 Protecting your digital legacy with care and security.
