@@ -60,7 +60,16 @@ export function Dashboard() {
             ...item,
             deleted_at: new Date(item.deleted_at)
           }))
-          setDeletedAssets(parsedDeleted)
+          
+          // Remove any potential duplicates based on ID and timestamp proximity
+          const uniqueDeleted = parsedDeleted.filter((item: any, index: number, array: any[]) => {
+            return array.findIndex((other: any) => 
+              other.id === item.id && 
+              Math.abs(new Date(other.deleted_at).getTime() - new Date(item.deleted_at).getTime()) < 5000
+            ) === index
+          })
+          
+          setDeletedAssets(uniqueDeleted)
         } catch (error) {
           console.error('Error parsing stored deleted assets:', error)
         }
@@ -90,17 +99,6 @@ export function Dashboard() {
       window.removeEventListener('deletedAssetsUpdated', handleDeletedAssetsUpdate)
     }
   }, [])
-
-  // Track asset deletions for recent activity
-  const trackAssetDeletion = (asset: any) => {
-    const deletedAsset = {
-      id: asset.id,
-      platform_name: asset.platform_name,
-      action: asset.action,
-      deleted_at: new Date()
-    }
-    setDeletedAssets(prev => [deletedAsset, ...prev.slice(0, 9)]) // Keep last 10 deletions
-  }
 
   // Update recent activities whenever assets, checkin data, or deletedAssets changes
   useEffect(() => {
@@ -137,8 +135,8 @@ export function Dashboard() {
       })
     })
 
-    // Add asset activities (latest 3 assets)
-    assets.slice(0, 3).forEach((asset) => {
+    // Add all asset activities (creation and updates)
+    assets.forEach((asset) => {
       // Add creation activity
       activities.push({
         id: `asset-created-${asset.id}`,
@@ -151,19 +149,29 @@ export function Dashboard() {
 
       // Add update activity if asset was updated (created_at !== updated_at)
       if (asset.updated_at && asset.created_at !== asset.updated_at) {
-        activities.push({
-          id: `asset-updated-${asset.id}`,
-          type: 'asset_updated',
-          title: `${asset.platform_name} updated`,
-          description: `Action: ${asset.action}`,
-          timeAgo: getTimeAgo(new Date(asset.updated_at)),
-          timestamp: new Date(asset.updated_at)
-        })
+        // Calculate time difference to make sure it's actually a meaningful update
+        const createdTime = new Date(asset.created_at).getTime()
+        const updatedTime = new Date(asset.updated_at).getTime()
+        
+        // Only show as update if updated more than 1 second after creation
+        if (updatedTime > createdTime + 1000) {
+          activities.push({
+            id: `asset-updated-${asset.id}`,
+            type: 'asset_updated',
+            title: `${asset.platform_name} updated`,
+            description: `Action: ${asset.action}`,
+            timeAgo: getTimeAgo(new Date(asset.updated_at)),
+            timestamp: new Date(asset.updated_at)
+          })
+        }
       }
     })
 
-    // Sort by timestamp (most recent first) and set the state
-    setRecentActivities(activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()))
+    // Sort by timestamp (most recent first) and take only the most recent 5-6 activities for the recent activity section
+    const sortedActivities = activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+    console.log('Recent activities generated:', sortedActivities.length, 'activities')
+    console.log('Update activities:', sortedActivities.filter(a => a.type === 'asset_updated'))
+    setRecentActivities(sortedActivities.slice(0, 6))
   }, [assets, checkin, deletedAssets])
 
   const handleCheckin = async () => {
@@ -264,69 +272,6 @@ export function Dashboard() {
   }
 
   // Function to get recent activities
-  const getRecentActivities = () => {
-    const activities: Array<{
-      id: string
-      type: 'checkin' | 'asset_added' | 'asset_updated' | 'asset_deleted'
-      title: string
-      description: string
-      timeAgo: string
-      timestamp: Date
-    }> = []
-
-    // Add check-in activity
-    if (checkin) {
-      activities.push({
-        id: `checkin-${checkin.id}`,
-        type: 'checkin',
-        title: 'System Check-in',
-        description: 'Dead man\'s switch timer reset',
-        timeAgo: getTimeAgo(new Date(checkin.last_checkin_at)),
-        timestamp: new Date(checkin.last_checkin_at)
-      })
-    }
-
-    // Add deleted asset activities
-    deletedAssets.forEach((deletedAsset) => {
-      activities.push({
-        id: `asset-deleted-${deletedAsset.id}`,
-        type: 'asset_deleted',
-        title: `${deletedAsset.platform_name} deleted`,
-        description: `${deletedAsset.action} asset removed`,
-        timeAgo: getTimeAgo(deletedAsset.deleted_at),
-        timestamp: deletedAsset.deleted_at
-      })
-    })
-
-    // Add asset activities (latest 3 assets)
-    assets.slice(0, 3).forEach((asset) => {
-      // Add creation activity
-      activities.push({
-        id: `asset-created-${asset.id}`,
-        type: 'asset_added',
-        title: `${asset.platform_name} added`,
-        description: `${asset.action}`,
-        timeAgo: getTimeAgo(new Date(asset.created_at)),
-        timestamp: new Date(asset.created_at)
-      })
-
-      // Add update activity if asset was updated (created_at !== updated_at)
-      if (asset.updated_at && asset.created_at !== asset.updated_at) {
-        activities.push({
-          id: `asset-updated-${asset.id}`,
-          type: 'asset_updated',
-          title: `${asset.platform_name} updated`,
-          description: `Action: ${asset.action}`,
-          timeAgo: getTimeAgo(new Date(asset.updated_at)),
-          timestamp: new Date(asset.updated_at)
-        })
-      }
-    })
-
-    // Sort by timestamp (most recent first)
-    return activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-  }
-
   // Function to get all activities
   const getAllActivities = () => {
     const activities: Array<{
@@ -376,14 +321,21 @@ export function Dashboard() {
 
       // Add update activity if asset was updated (created_at !== updated_at)
       if (asset.updated_at && asset.created_at !== asset.updated_at) {
-        activities.push({
-          id: `asset-updated-${asset.id}`,
-          type: 'asset_updated',
-          title: `${asset.platform_name} updated`,
-          description: `Action: ${asset.action}`,
-          timeAgo: getTimeAgo(new Date(asset.updated_at)),
-          timestamp: new Date(asset.updated_at)
-        })
+        // Calculate time difference to make sure it's actually a meaningful update
+        const createdTime = new Date(asset.created_at).getTime()
+        const updatedTime = new Date(asset.updated_at).getTime()
+        
+        // Only show as update if updated more than 1 second after creation
+        if (updatedTime > createdTime + 1000) {
+          activities.push({
+            id: `asset-updated-${asset.id}`,
+            type: 'asset_updated',
+            title: `${asset.platform_name} updated`,
+            description: `Action: ${asset.action}`,
+            timeAgo: getTimeAgo(new Date(asset.updated_at)),
+            timestamp: new Date(asset.updated_at)
+          })
+        }
       }
     })
 

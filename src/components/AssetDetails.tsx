@@ -1,11 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Search,
   Filter,
   File,
   ArrowLeft,
-  X,
   AlertTriangle
 } from 'lucide-react'
 import { useDigitalAssets } from '../hooks/useDigitalAssets'
@@ -22,6 +21,7 @@ export function AssetDetails() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [editingAsset, setEditingAsset] = useState<string | null>(null)
   const [deletingAsset, setDeletingAsset] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [alert, setAlert] = useState<{
     isVisible: boolean
     type: 'success' | 'error' | 'warning' | 'info'
@@ -34,6 +34,16 @@ export function AssetDetails() {
     title: ''
   })
   const navigate = useNavigate()
+
+  // Check if we're viewing a specific asset (from URL params or state)
+  // If the asset list changes and becomes empty, or if viewing a specific asset that no longer exists,
+  // automatically redirect to dashboard
+  useEffect(() => {
+    // If there are no assets at all, redirect to dashboard
+    if (!loading && assets.length === 0) {
+      navigate('/dashboard')
+    }
+  }, [assets, loading, navigate])
 
   // Filter assets based on search and filter
   const filteredAssets = assets.filter(asset => {
@@ -65,28 +75,23 @@ export function AssetDetails() {
       const assetToDelete = assets.find(a => a.id === deletingAsset)
       if (!assetToDelete) return
 
+      setIsDeleting(true)
+      
       try {
         await deleteAsset(deletingAsset)
         
-        // Store deleted asset for recent activity tracking
-        const deletedAsset = {
-          id: assetToDelete.id,
-          platform_name: assetToDelete.platform_name,
-          action: assetToDelete.action,
-          deleted_at: new Date()
-        }
-        
-        const existingDeleted = JSON.parse(localStorage.getItem('deletedAssets') || '[]')
-        const updatedDeleted = [deletedAsset, ...existingDeleted.slice(0, 9)]
-        localStorage.setItem('deletedAssets', JSON.stringify(updatedDeleted))
-        
-        // Dispatch custom event for Dashboard to update
-        window.dispatchEvent(new Event('deletedAssetsUpdated'))
-        
+        // Show success message briefly before navigating
         showAlert('success', 'Asset Deleted', `${assetToDelete.platform_name} asset has been deleted successfully.`, assetToDelete.action)
+        
+        // Navigate back to dashboard after a short delay to show the success message
+        setTimeout(() => {
+          navigate('/dashboard')
+        }, 1500)
+        
       } catch (error) {
         console.error('Failed to delete asset:', error)
         showAlert('error', 'Delete Failed', 'Failed to delete asset. Please try again.')
+        setIsDeleting(false)
       }
       
       setShowDeleteConfirm(false)
@@ -305,9 +310,17 @@ export function AssetDetails() {
                 </button>
                 <button
                   onClick={handleDeleteConfirm}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Delete
+                  {isDeleting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete'
+                  )}
                 </button>
               </div>
             </motion.div>
@@ -326,4 +339,4 @@ export function AssetDetails() {
       />
     </div>
   )
-} 
+}

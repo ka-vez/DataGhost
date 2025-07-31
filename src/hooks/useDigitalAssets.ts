@@ -195,7 +195,8 @@ export function useDigitalAssets() {
 
       if (error) throw error
       
-      setAssets(prev => prev.filter(asset => asset.id !== id))
+      // Don't manually update state here - let the real-time subscription handle it
+      // This prevents duplicate state updates
       
       // Track deletion in localStorage for activity tracking
       if (assetToDelete) {
@@ -206,12 +207,21 @@ export function useDigitalAssets() {
           action: assetToDelete.action,
           deleted_at: new Date().toISOString()
         }
-        deletedAssets.unshift(deletionRecord)
-        // Keep only last 10 deletions
-        localStorage.setItem('deletedAssets', JSON.stringify(deletedAssets.slice(0, 10)))
         
-        // Dispatch custom event for same-tab updates
-        window.dispatchEvent(new CustomEvent('deletedAssetsUpdated'))
+        // Check for duplicates before adding
+        const isDuplicate = deletedAssets.some((existing: any) => 
+          existing.id === deletionRecord.id && 
+          Math.abs(new Date(existing.deleted_at).getTime() - new Date(deletionRecord.deleted_at).getTime()) < 5000 // Within 5 seconds
+        )
+        
+        if (!isDuplicate) {
+          deletedAssets.unshift(deletionRecord)
+          // Keep only last 10 deletions
+          localStorage.setItem('deletedAssets', JSON.stringify(deletedAssets.slice(0, 10)))
+          
+          // Dispatch custom event for same-tab updates
+          window.dispatchEvent(new CustomEvent('deletedAssetsUpdated'))
+        }
       }
       
       return assetToDelete
