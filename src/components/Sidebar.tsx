@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { useDigitalAssets } from '../hooks/useDigitalAssets'
 import { AssetModal } from './AssetModal'
+import { NewAssetModal } from './NewAssetModal'
 import { FileUploadModal } from './FileUploadModal'
 import { UserProfileModal } from './UserProfileModal'
 import { AssetCard } from './AssetCard'
@@ -340,7 +341,7 @@ export function Sidebar({ isOpen = false, onClose, isCollapsed = false, onToggle
       </motion.div>
 
       {/* Modals */}
-      <AssetModal
+      <NewAssetModal
         isOpen={showAssetModal}
         onClose={() => {
           setShowAssetModal(false)

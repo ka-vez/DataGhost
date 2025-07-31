@@ -8,6 +8,7 @@ import { Header } from './Header'
 import { Sidebar } from './Sidebar'
 import { ExecutionSummary } from './ExecutionSummary'
 import { AssetModal } from './AssetModal'
+import { NewAssetModal } from './NewAssetModal'
 import { FileUploadModal } from './FileUploadModal'
 import { AlertToast } from './AlertToast'
 
@@ -175,12 +176,17 @@ export function Dashboard() {
 
   const handleAssetSave = async (data: any) => {
     try {
+      console.log('Dashboard handleAssetSave called with:', data)
       await addAsset(data)
       showAlert('success', 'Asset Added', `${data.platform_name} asset has been added successfully.`, data.action)
       setShowAssetModal(false)
     } catch (error) {
-      console.error('Failed to save asset:', error)
-      showAlert('error', 'Error', 'Failed to save asset. Please try again.')
+      console.error('Failed to save asset in Dashboard:', error)
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      })
+      showAlert('error', 'Error', `Failed to create asset: ${error instanceof Error ? error.message : 'Please try again'}`)
     }
   }
 
@@ -427,7 +433,7 @@ export function Dashboard() {
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 sm:mb-2 truncate">
-                    Welcome back, {getDisplayName()}
+                    Welcome, {getDisplayName()}
                   </h1>
                   <p className="text-blue-100 text-sm sm:text-base lg:text-lg">
                     Your digital legacy is secure and protected
@@ -779,7 +785,7 @@ export function Dashboard() {
       </div>
 
       {/* Modals */}
-      <AssetModal
+      <NewAssetModal
         isOpen={showAssetModal}
         onClose={() => setShowAssetModal(false)}
         onSave={handleAssetSave}

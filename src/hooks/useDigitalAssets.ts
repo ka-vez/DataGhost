@@ -15,6 +15,10 @@ export interface DigitalAsset {
   file_size?: string
   file_type?: string
   storage_path?: string
+  platform_email?: string
+  platform_password?: string
+  platform_username?: string
+  platform_phone?: string
 }
 
 export function useDigitalAssets() {
@@ -92,15 +96,43 @@ export function useDigitalAssets() {
   const addAsset = async (asset: Omit<DigitalAsset, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       console.log('addAsset called with:', asset)
+      console.log('Current user:', user)
+      
+      if (!user) {
+        throw new Error('User not authenticated. Please log in and try again.')
+      }
+      
+      // Validate required fields
+      if (!asset.platform_name) {
+        throw new Error('Platform name is required')
+      }
+      
+      if (!asset.action) {
+        throw new Error('Action is required')
+      }
+      
+      if (!asset.time_delay) {
+        throw new Error('Time delay is required')
+      }
+      
+      const assetWithUserId = { ...asset, user_id: user.id }
+      console.log('Asset with user ID:', assetWithUserId)
+      
       const { data, error } = await supabase
         .from('digital_assets')
-        .insert([{ ...asset, user_id: user!.id }])
+        .insert([assetWithUserId])
         .select()
         .single()
 
       if (error) {
         console.error('Supabase insert error:', error)
-        throw error
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
+        throw new Error(`Database error: ${error.message}${error.hint ? ` (${error.hint})` : ''}`)
       }
       console.log('Asset inserted successfully:', data)
       
