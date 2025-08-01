@@ -109,8 +109,8 @@ export function NewAssetModal({ isOpen, onClose, onSave, asset, preselectedActio
         // Editing case
         await onSave(asset.id, finalData)
       } else {
-        // Adding case
-        await onSave(finalData)
+        // Adding case - cast to single parameter function
+        await (onSave as (data: any) => Promise<void>)(finalData)
       }
       
       handleClose()
@@ -238,9 +238,12 @@ export function NewAssetModal({ isOpen, onClose, onSave, asset, preselectedActio
                   <h2 className="text-xl font-semibold text-gray-900">
                     {asset ? 'Edit Asset' : 'Add New Asset'}
                   </h2>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Step {currentStep} of 2
-                  </p>
+                  {/* Only show step info for Transfer actions */}
+                  {assetData.action === 'Transfer' && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Step {currentStep} of 2
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={handleClose}
@@ -250,22 +253,24 @@ export function NewAssetModal({ isOpen, onClose, onSave, asset, preselectedActio
                 </button>
               </div>
 
-              {/* Step Indicator */}
-              <div className="flex items-center mb-6">
-                <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-                  currentStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
-                }`}>
-                  1
+              {/* Step Indicator - Only show for Transfer actions */}
+              {assetData.action === 'Transfer' && (
+                <div className="flex items-center mb-6">
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
+                    currentStep >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
+                  }`}>
+                    1
+                  </div>
+                  <div className={`flex-1 h-1 mx-3 ${
+                    currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-200'
+                  }`}></div>
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
+                    currentStep >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
+                  }`}>
+                    2
+                  </div>
                 </div>
-                <div className={`flex-1 h-1 mx-3 ${
-                  currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-200'
-                }`}></div>
-                <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-                  currentStep >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
-                }`}>
-                  2
-                </div>
-              </div>
+              )}
 
               {error && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
