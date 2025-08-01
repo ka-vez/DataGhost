@@ -7,7 +7,7 @@ interface SimpleAssetModalProps {
   isOpen: boolean
   onClose: () => void
   onSave: (data: any) => Promise<void>
-  preselectedAction: 'Delete' | 'Archive'
+  preselectedAction: 'Delete' | 'Memorialize'
   asset?: DigitalAsset
 }
 
@@ -24,7 +24,7 @@ export function SimpleAssetModal({ isOpen, onClose, onSave, preselectedAction, a
     if (asset) {
       setFormData({
         platform_name: asset.platform_name,
-        action: asset.action as 'Delete' | 'Archive',
+        action: asset.action as 'Delete' | 'Memorialize',
         time_delay: asset.time_delay
       })
     } else {
@@ -60,7 +60,7 @@ export function SimpleAssetModal({ isOpen, onClose, onSave, preselectedAction, a
         platform_name: formData.platform_name.trim(),
         action: formData.action,
         time_delay: formData.time_delay,
-        // For Delete and Archive, we don't need credentials or recipient email
+        // For Delete and Memorialize, we don't need credentials or recipient email
         recipient_email: null,
         platform_email: null,
         platform_password: null,
@@ -98,9 +98,9 @@ export function SimpleAssetModal({ isOpen, onClose, onSave, preselectedAction, a
       color: 'red',
       icon: Shield
     },
-    Archive: {
-      title: 'Archive Asset',
-      description: 'This asset will be archived for long-term storage after the specified time delay',
+    Memorialize: {
+      title: 'Memorialize Asset',
+      description: 'This asset will be memorialized for long-term storage after the specified time delay',
       color: 'amber',
       icon: Shield
     }

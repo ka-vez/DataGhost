@@ -26,7 +26,7 @@ export type Database = {
           id: string
           user_id: string
           platform_name: string
-          action: 'Delete' | 'Transfer' | 'Archive'
+          action: 'Delete' | 'Transfer' | 'Memorialize'
           recipient_email: string | null
           time_delay: string
           created_at: string
@@ -36,7 +36,7 @@ export type Database = {
           id?: string
           user_id: string
           platform_name: string
-          action: 'Delete' | 'Transfer' | 'Archive'
+          action: 'Delete' | 'Transfer' | 'Memorialize'
           recipient_email?: string | null
           time_delay?: string
           created_at?: string
@@ -46,7 +46,7 @@ export type Database = {
           id?: string
           user_id?: string
           platform_name?: string
-          action?: 'Delete' | 'Transfer' | 'Archive'
+          action?: 'Delete' | 'Transfer' | 'Memorialize'
           recipient_email?: string | null
           time_delay?: string
           created_at?: string

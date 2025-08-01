@@ -7,7 +7,7 @@ import {
   Download, 
   Settings, 
   File, 
-  Archive, 
+  Heart, 
   Trash, 
   Share,
   Search,
@@ -49,7 +49,7 @@ export function Sidebar({ isOpen = false, onClose, isCollapsed = false, onToggle
     type: 'success' | 'error' | 'warning' | 'info'
     title: string
     description?: string
-    actionType?: 'Delete' | 'Transfer' | 'Archive'
+    actionType?: 'Delete' | 'Transfer' | 'Memorialize'
   }>({
     isVisible: false,
     type: 'success',
@@ -72,7 +72,7 @@ export function Sidebar({ isOpen = false, onClose, isCollapsed = false, onToggle
     all: assets.length,
     Delete: assets.filter(a => a.action === 'Delete').length,
     Transfer: assets.filter(a => a.action === 'Transfer').length,
-    Archive: assets.filter(a => a.action === 'Archive').length
+    Memorialize: assets.filter(a => a.action === 'Memorialize').length
   }
 
   const handleAssetSave = async (data: any) => {
@@ -107,7 +107,7 @@ export function Sidebar({ isOpen = false, onClose, isCollapsed = false, onToggle
     type: 'success' | 'error' | 'warning' | 'info',
     title: string,
     description?: string,
-    actionType?: 'Delete' | 'Transfer' | 'Archive'
+    actionType?: 'Delete' | 'Transfer' | 'Memorialize'
   ) => {
     setAlert({
       isVisible: true,

@@ -9,14 +9,14 @@ interface NewAssetModalProps {
   onClose: () => void
   onSave: (id: string, data: any) => Promise<void> | ((data: any) => Promise<void>)
   asset?: DigitalAsset
-  preselectedAction?: 'Delete' | 'Transfer' | 'Archive'
+  preselectedAction?: 'Delete' | 'Transfer' | 'Memorialize'
 }
 
 export function NewAssetModal({ isOpen, onClose, onSave, asset, preselectedAction }: NewAssetModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [assetData, setAssetData] = useState({
     platform_name: '',
-    action: 'Delete' as 'Delete' | 'Transfer' | 'Archive',
+    action: 'Delete' as 'Delete' | 'Transfer' | 'Memorialize',
     recipient_email: '',
     time_delay: '00:00:00'
   })
@@ -78,8 +78,8 @@ export function NewAssetModal({ isOpen, onClose, onSave, asset, preselectedActio
       return
     }
 
-    // For Delete and Archive actions, skip credentials and submit directly
-    if (assetData.action === 'Delete' || assetData.action === 'Archive') {
+    // For Delete and Memorialize actions, skip credentials and submit directly
+    if (assetData.action === 'Delete' || assetData.action === 'Memorialize') {
       handleDirectSubmit()
       return
     }
@@ -98,7 +98,7 @@ export function NewAssetModal({ isOpen, onClose, onSave, asset, preselectedActio
         action: assetData.action,
         recipient_email: assetData.action === 'Transfer' ? assetData.recipient_email : null,
         time_delay: assetData.time_delay,
-        // For Delete and Archive, no credentials needed
+        // For Delete and Memorialize, no credentials needed
         platform_email: null,
         platform_password: null,
         platform_username: null,
@@ -303,12 +303,12 @@ export function NewAssetModal({ isOpen, onClose, onSave, asset, preselectedActio
                       </label>
                       <select
                         value={assetData.action}
-                        onChange={(e) => setAssetData(prev => ({ ...prev, action: e.target.value as 'Delete' | 'Transfer' | 'Archive' }))}
+                        onChange={(e) => setAssetData(prev => ({ ...prev, action: e.target.value as 'Delete' | 'Transfer' | 'Memorialize' }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
                         <option value="Delete">Delete</option>
                         <option value="Transfer">Transfer</option>
-                        <option value="Archive">Archive</option>
+                        <option value="Memorialize">Memorialize</option>
                       </select>
                     </div>
                   )}
@@ -371,7 +371,7 @@ export function NewAssetModal({ isOpen, onClose, onSave, asset, preselectedActio
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                           Saving...
                         </>
-                      ) : assetData.action === 'Delete' || assetData.action === 'Archive' ? (
+                      ) : assetData.action === 'Delete' || assetData.action === 'Memorialize' ? (
                         <>
                           <Save className="w-4 h-4" />
                           {asset ? 'Update' : 'Save'} Asset

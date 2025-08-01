@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Edit2, Trash2, Clock, Mail, Archive, Trash, Share, File } from 'lucide-react'
+import { Edit2, Trash2, Clock, Mail, FileArchive, Trash, Share, File } from 'lucide-react'
 import { DigitalAsset } from '../hooks/useDigitalAssets'
 
 interface AssetCardProps {
@@ -14,7 +14,7 @@ export function AssetCard({ asset, index, onEdit, onDelete }: AssetCardProps) {
     switch (asset.action) {
       case 'Delete': return <Trash className="w-5 h-5" />
       case 'Transfer': return <Share className="w-5 h-5" />
-      case 'Archive': return <Archive className="w-5 h-5" />
+      case 'Memorialize': return <FileArchive className="w-5 h-5" />
     }
   }
 
@@ -22,7 +22,7 @@ export function AssetCard({ asset, index, onEdit, onDelete }: AssetCardProps) {
     switch (asset.action) {
       case 'Delete': return 'text-red-600 bg-red-50'
       case 'Transfer': return 'text-blue-600 bg-blue-50'
-      case 'Archive': return 'text-yellow-600 bg-yellow-50'
+      case 'Memorialize': return 'text-yellow-600 bg-yellow-50'
     }
   }
 

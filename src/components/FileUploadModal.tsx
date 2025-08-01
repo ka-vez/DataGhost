@@ -20,7 +20,7 @@ interface UploadedFile {
 export function FileUploadModal({ isOpen, onClose, onSave }: FileUploadModalProps) {
   const { userProfile, user } = useAuth()
   const [files, setFiles] = useState<UploadedFile[]>([])
-  const [action, setAction] = useState<'Delete' | 'Transfer' | 'Archive'>('Archive')
+  const [action, setAction] = useState<'Delete' | 'Transfer' | 'Memorialize'>('Memorialize')
   const [recipientEmail, setRecipientEmail] = useState('')
   const [timeDelay, setTimeDelay] = useState('00:00:00')
   const [loading, setLoading] = useState(false)
@@ -138,7 +138,7 @@ export function FileUploadModal({ isOpen, onClose, onSave }: FileUploadModalProp
 
       // Reset form
       setFiles([])
-      setAction('Archive')
+      setAction('Memorialize')
       setRecipientEmail('')
       setTimeDelay('00:00:00')
       onClose()
@@ -259,7 +259,7 @@ export function FileUploadModal({ isOpen, onClose, onSave }: FileUploadModalProp
                     onChange={(e) => setAction(e.target.value as any)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="Archive">Archive</option>
+                    <option value="Memorialize">Memorialize</option>
                     <option value="Transfer">Transfer</option>
                     <option value="Delete">Delete</option>
                   </select>

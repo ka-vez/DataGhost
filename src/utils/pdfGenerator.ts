@@ -104,7 +104,7 @@ export const generateDigitalWillPDF = async (assets: DigitalAsset[], username: s
     const actionColors = {
       'Delete': '#DC2626',
       'Transfer': '#2563EB', 
-      'Archive': '#D97706'
+      'Memorialize': '#D97706'
     }
     
     addText(`${action.toUpperCase()} ACTIONS (${actionAssets.length} item${actionAssets.length !== 1 ? 's' : ''})`, 14, true, actionColors[action as keyof typeof actionColors])

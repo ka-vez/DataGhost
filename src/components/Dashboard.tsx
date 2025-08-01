@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, AlertTriangle, CheckCircle2, BarChart3, Users, Shield, Calendar, TrendingUp, Archive, Plus, Activity, Trash2, Upload, X, Edit, Trash } from 'lucide-react'
+import { Clock, AlertTriangle, CheckCircle2, BarChart3, Users, Shield, Calendar, TrendingUp, Heart, Plus, Activity, Trash2, Upload, X, Edit, Trash } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useDigitalAssets } from '../hooks/useDigitalAssets'
 import { useCheckins } from '../hooks/useCheckins'
@@ -41,7 +41,7 @@ export function Dashboard() {
     type: 'success' | 'error' | 'warning' | 'info'
     title: string
     description?: string
-    actionType?: 'Delete' | 'Transfer' | 'Archive'
+    actionType?: 'Delete' | 'Transfer' | 'Memorialize'
   }>({
     isVisible: false,
     type: 'success',
@@ -213,7 +213,7 @@ export function Dashboard() {
     type: 'success' | 'error' | 'warning' | 'info',
     title: string,
     description?: string,
-    actionType?: 'Delete' | 'Transfer' | 'Archive'
+    actionType?: 'Delete' | 'Transfer' | 'Memorialize'
   ) => {
     setAlert({
       isVisible: true,
@@ -656,11 +656,11 @@ export function Dashboard() {
                         transition={{ delay: index * 0.05 }}
                         className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
                       >
-                        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        <div                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                           activity.type === 'checkin' ? 'bg-green-100' :
                           activity.type === 'asset_added' ? 
                             (activity.description === 'Delete' ? 'bg-red-100' :
-                             activity.description === 'Archive' ? 'bg-yellow-100' :
+                             activity.description === 'Memorialize' ? 'bg-yellow-100' :
                              'bg-blue-100') :
                           activity.type === 'asset_updated' ? 'bg-orange-100' :
                           activity.type === 'asset_deleted' ? 'bg-red-100' : 'bg-gray-100'
@@ -670,7 +670,7 @@ export function Dashboard() {
                           ) : activity.type === 'asset_added' ? (
                             <Plus className={`w-4 h-4 sm:w-5 sm:h-5 ${
                               activity.description === 'Delete' ? 'text-red-600' :
-                              activity.description === 'Archive' ? 'text-yellow-600' :
+                              activity.description === 'Memorialize' ? 'text-yellow-600' :
                               'text-blue-600'
                             }`} />
                           ) : activity.type === 'asset_updated' ? (
@@ -813,7 +813,7 @@ export function Dashboard() {
                           activity.type === 'checkin' ? 'bg-green-100' :
                           activity.type === 'asset_added' ? 
                             (activity.description === 'Delete' ? 'bg-red-100' :
-                             activity.description === 'Archive' ? 'bg-yellow-100' :
+                             activity.description === 'Memorialize' ? 'bg-yellow-100' :
                              'bg-blue-100') :
                           activity.type === 'asset_updated' ? 'bg-orange-100' :
                           activity.type === 'asset_deleted' ? 'bg-red-100' : 'bg-gray-100'
@@ -823,7 +823,7 @@ export function Dashboard() {
                           ) : activity.type === 'asset_added' ? (
                             <Plus className={`w-5 h-5 ${
                               activity.description === 'Delete' ? 'text-red-600' :
-                              activity.description === 'Archive' ? 'text-yellow-600' :
+                              activity.description === 'Memorialize' ? 'text-yellow-600' :
                               'text-blue-600'
                             }`} />
                           ) : activity.type === 'asset_updated' ? (

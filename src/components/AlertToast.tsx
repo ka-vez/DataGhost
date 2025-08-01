@@ -10,7 +10,7 @@ interface AlertToastProps {
   autoHide?: boolean
   autoHideDelay?: number
   onClose: () => void
-  actionType?: 'Delete' | 'Transfer' | 'Archive'
+  actionType?: 'Delete' | 'Transfer' | 'Memorialize'
 }
 
 export function AlertToast({
@@ -83,7 +83,7 @@ export function AlertToast({
             description: 'text-blue-700',
             closeButton: 'text-blue-400 hover:text-blue-600'
           }
-        case 'Archive':
+        case 'Memorialize':
           return {
             container: 'bg-yellow-50 border-yellow-200',
             icon: 'text-yellow-600',

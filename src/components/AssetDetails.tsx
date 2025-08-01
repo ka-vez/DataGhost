@@ -27,7 +27,7 @@ export function AssetDetails() {
     type: 'success' | 'error' | 'warning' | 'info'
     title: string
     description?: string
-    actionType?: 'Delete' | 'Transfer' | 'Archive'
+    actionType?: 'Delete' | 'Transfer' | 'Memorialize'
   }>({
     isVisible: false,
     type: 'success',
@@ -57,7 +57,7 @@ export function AssetDetails() {
     all: assets.length,
     Delete: assets.filter(a => a.action === 'Delete').length,
     Transfer: assets.filter(a => a.action === 'Transfer').length,
-    Archive: assets.filter(a => a.action === 'Archive').length
+    Memorialize: assets.filter(a => a.action === 'Memorialize').length
   }
 
   const handleEdit = (assetId: string) => {
@@ -122,7 +122,7 @@ export function AssetDetails() {
     type: 'success' | 'error' | 'warning' | 'info',
     title: string,
     description?: string,
-    actionType?: 'Delete' | 'Transfer' | 'Archive'
+    actionType?: 'Delete' | 'Transfer' | 'Memorialize'
   ) => {
     setAlert({
       isVisible: true,
@@ -190,7 +190,7 @@ export function AssetDetails() {
                 <option value="all">All Actions ({assetCounts.all})</option>
                 <option value="Delete">Delete ({assetCounts.Delete})</option>
                 <option value="Transfer">Transfer ({assetCounts.Transfer})</option>
-                <option value="Archive">Archive ({assetCounts.Archive})</option>
+                <option value="Memorialize">Memorialize ({assetCounts.Memorialize})</option>
               </select>
             </div>
           </div>
@@ -206,8 +206,8 @@ export function AssetDetails() {
               <div className="text-sm text-blue-600">Transfer</div>
             </div>
             <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-100">
-              <div className="text-2xl font-bold text-yellow-600 mb-1">{assetCounts.Archive}</div>
-              <div className="text-sm text-yellow-600">Archive</div>
+              <div className="text-2xl font-bold text-yellow-600 mb-1">{assetCounts.Memorialize}</div>
+              <div className="text-sm text-yellow-600">Memorialize</div>
             </div>
           </div>
         </div>
