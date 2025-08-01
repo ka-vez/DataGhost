@@ -9,9 +9,10 @@ interface NewAssetModalProps {
   onClose: () => void
   onSave: (id: string, data: any) => Promise<void> | ((data: any) => Promise<void>)
   asset?: DigitalAsset
+  preselectedAction?: 'Delete' | 'Transfer' | 'Archive'
 }
 
-export function NewAssetModal({ isOpen, onClose, onSave, asset }: NewAssetModalProps) {
+export function NewAssetModal({ isOpen, onClose, onSave, asset, preselectedAction }: NewAssetModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [assetData, setAssetData] = useState({
     platform_name: '',
@@ -47,7 +48,7 @@ export function NewAssetModal({ isOpen, onClose, onSave, asset }: NewAssetModalP
     } else {
       setAssetData({
         platform_name: '',
-        action: 'Delete',
+        action: preselectedAction || 'Delete',
         recipient_email: '',
         time_delay: '00:00:00'
       })
@@ -59,7 +60,7 @@ export function NewAssetModal({ isOpen, onClose, onSave, asset }: NewAssetModalP
       })
     }
     setCurrentStep(1)
-  }, [asset, isOpen])
+  }, [asset, isOpen, preselectedAction])
 
   const handleAssetSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -77,8 +78,48 @@ export function NewAssetModal({ isOpen, onClose, onSave, asset }: NewAssetModalP
       return
     }
 
-    // Move to credentials step
+    // For Delete and Archive actions, skip credentials and submit directly
+    if (assetData.action === 'Delete' || assetData.action === 'Archive') {
+      handleDirectSubmit()
+      return
+    }
+
+    // For Transfer action, move to credentials step
     setCurrentStep(2)
+  }
+
+  const handleDirectSubmit = async () => {
+    setLoading(true)
+    setError('')
+
+    try {
+      const finalData = {
+        platform_name: assetData.platform_name,
+        action: assetData.action,
+        recipient_email: assetData.action === 'Transfer' ? assetData.recipient_email : null,
+        time_delay: assetData.time_delay,
+        // For Delete and Archive, no credentials needed
+        platform_email: null,
+        platform_password: null,
+        platform_username: null,
+        platform_phone: null
+      }
+
+      if (asset) {
+        // Editing case
+        await onSave(asset.id, finalData)
+      } else {
+        // Adding case
+        await onSave(finalData)
+      }
+      
+      handleClose()
+    } catch (error: any) {
+      console.error('Failed to save asset:', error)
+      setError(error.message || 'Failed to save asset. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleCredentialsSubmit = async (e: React.FormEvent) => {
@@ -249,20 +290,35 @@ export function NewAssetModal({ isOpen, onClose, onSave, asset }: NewAssetModalP
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Action
-                    </label>
-                    <select
-                      value={assetData.action}
-                      onChange={(e) => setAssetData(prev => ({ ...prev, action: e.target.value as 'Delete' | 'Transfer' | 'Archive' }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="Delete">Delete</option>
-                      <option value="Transfer">Transfer</option>
-                      <option value="Archive">Archive</option>
-                    </select>
-                  </div>
+                  {/* Only show action selector if no preselected action */}
+                  {!preselectedAction && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Action
+                      </label>
+                      <select
+                        value={assetData.action}
+                        onChange={(e) => setAssetData(prev => ({ ...prev, action: e.target.value as 'Delete' | 'Transfer' | 'Archive' }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="Delete">Delete</option>
+                        <option value="Transfer">Transfer</option>
+                        <option value="Archive">Archive</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Show selected action as read-only if preselected */}
+                  {preselectedAction && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Selected Action
+                      </label>
+                      <div className="px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-blue-700">
+                        {assetData.action}
+                      </div>
+                    </div>
+                  )}
 
                   {assetData.action === 'Transfer' && (
                     <div>
@@ -302,10 +358,25 @@ export function NewAssetModal({ isOpen, onClose, onSave, asset }: NewAssetModalP
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       type="submit"
-                      className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                      disabled={loading}
+                      className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Continue
-                      <ArrowRight className="w-4 h-4" />
+                      {loading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Saving...
+                        </>
+                      ) : assetData.action === 'Delete' || assetData.action === 'Archive' ? (
+                        <>
+                          <Save className="w-4 h-4" />
+                          {asset ? 'Update' : 'Save'} Asset
+                        </>
+                      ) : (
+                        <>
+                          Continue
+                          <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
                     </motion.button>
                   </div>
                 </form>
