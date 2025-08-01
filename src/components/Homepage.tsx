@@ -80,19 +80,20 @@ export function Homepage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.98 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="relative z-10"
               >
                 <Link
                   to="/auth"
-                  className="relative px-6 py-2.5 text-gray-700 font-medium rounded-xl hover:text-blue-600 transition-all duration-300 group overflow-hidden"
+                  className="relative flex items-center px-4 sm:px-6 py-1.5 sm:py-2.5 text-gray-700 font-medium rounded-lg sm:rounded-xl hover:text-blue-600 transition-all duration-300 group overflow-hidden text-xs sm:text-base h-8 sm:h-10"
                 >
                   <span className="relative z-10">Sign In</span>
                   <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl opacity-0 group-hover:opacity-100"
+                    className="absolute inset-0 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg sm:rounded-xl opacity-0 group-hover:opacity-100 -z-10"
                     initial={false}
                     whileHover={{ scale: 1 }}
                     transition={{ duration: 0.3 }}
@@ -106,22 +107,22 @@ export function Homepage() {
                 }} 
                 whileTap={{ scale: 0.98 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className="relative"
+                className="relative z-10"
               >
                 <Link
                   to="/auth"
                   state={{ isSignUp: true }}
-                  className="relative inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
+                  className="relative inline-flex items-center gap-1 sm:gap-2 px-3 sm:px-6 py-1.5 sm:py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg sm:rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group text-xs sm:text-base h-8 sm:h-10"
                 >
-                  <span className="relative z-10">Get Started</span>
+                  <span className="relative z-10 whitespace-nowrap">Get Started</span>
                   <motion.div
                     animate={{ x: [0, 3, 0] }}
                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                     className="relative z-10"
                   >
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
                   </motion.div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"></div>
                 </Link>
               </motion.div>
             </div>
