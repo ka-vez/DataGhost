@@ -15,10 +15,14 @@ export function AuthForm() {
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false)
   const { signIn, signUp } = useAuth()
 
-  // Check if we should start in signup mode
+  // Check if we should start in signup mode or pre-fill email
   useEffect(() => {
     if (location.state?.isSignUp) {
       setIsLogin(false)
+    }
+    if (location.state?.prefilledEmail) {
+      setEmail(location.state.prefilledEmail)
+      setIsLogin(true) // Always set to login mode when coming from email verification
     }
   }, [location.state])
 
@@ -108,7 +112,12 @@ export function AuthForm() {
             
             <div className="space-y-4">
               <button
-                onClick={() => setShowEmailConfirmation(false)}
+                onClick={() => {
+                  setShowEmailConfirmation(false)
+                  setIsLogin(true)
+                  setUsername('') // Clear username but keep email and password
+                  setError('')
+                }}
                 className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
               >
                 Back to Sign In

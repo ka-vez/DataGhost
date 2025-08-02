@@ -4,6 +4,7 @@ import { Dashboard } from './components/Dashboard'
 import { Homepage } from './components/Homepage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AssetDetails } from './components/AssetDetails'
+import { EmailVerified } from './components/EmailVerified'
 import { useAuth } from './hooks/useAuth'
 
 function App() {
@@ -46,6 +47,10 @@ function App() {
               <AssetDetails />
             </ProtectedRoute>
           }
+        />
+        <Route 
+          path="/email-verified" 
+          element={<EmailVerified />} 
         />
         {/* Catch-all route - redirect to dashboard if authenticated, otherwise to home */}
         <Route 
